@@ -1,7 +1,12 @@
 package softserve.academy
 
+interface Defendable {
+    val defense: Int
+}
+
 open class Warrior(
-    initialHealth: Int = 50, val attack: Int = 5
+    initialHealth: Int = 50,
+    val attack: Int = 5
 ) {
     private var _health: Int = initialHealth
     val health: Int
@@ -22,16 +27,27 @@ open class Warrior(
 }
 
 class Knight : Warrior(
-    initialHealth = 50, // Adheres to the base health value.
+    initialHealth = 50,
     attack = 7
 )
 
+class Defender : Warrior(
+    initialHealth = 60,
+    attack = 3
+), Defendable {
+    override val defense: Int = 2
+}
+
 fun fight(warrior1: Warrior, warrior2: Warrior): Boolean {
     while (warrior1.isAlive && warrior2.isAlive) {
-        warrior2.takeDamage(warrior1.attack)
+        val defenseOfWarrior2 = if (warrior2 is Defendable) warrior2.defense else 0
+        val damageToWarrior2 = warrior1.attack - defenseOfWarrior2
+        warrior2.takeDamage(damageToWarrior2)
 
         if (warrior2.isAlive) {
-            warrior1.takeDamage(warrior2.attack)
+            val defenseOfWarrior1 = if (warrior1 is Defendable) warrior1.defense else 0
+            val damageToWarrior1 = warrior2.attack - defenseOfWarrior1
+            warrior1.takeDamage(damageToWarrior1)
         }
 
         if (warrior1.attack == 0 && warrior2.attack == 0) {
@@ -41,4 +57,3 @@ fun fight(warrior1: Warrior, warrior2: Warrior): Boolean {
 
     return warrior1.isAlive
 }
-
