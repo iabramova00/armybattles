@@ -4,10 +4,16 @@ interface Defendable {
     val defense: Int
 }
 
+interface Vampiric {
+    val vampirism: Int // Stored as an integer, e.g., 50 for 50%.
+}
+
 open class Warrior(
     initialHealth: Int = 50,
     val attack: Int = 5
 ) {
+    private val maxHealth: Int = initialHealth
+
     private var _health: Int = initialHealth
     val health: Int
         get() = _health
@@ -24,6 +30,12 @@ open class Warrior(
             this._health -= damage
         }
     }
+
+    fun receiveHealing(amount: Int) {
+        if (amount > 0) {
+            _health = (_health + amount).coerceAtMost(maxHealth)
+        }
+    }
 }
 
 class Knight : Warrior(
@@ -38,16 +50,31 @@ class Defender : Warrior(
     override val defense: Int = 2
 }
 
+class Vampire : Warrior(
+    initialHealth = 40,
+    attack = 4
+), Vampiric {
+    override val vampirism: Int = 50
+}
+
+private fun handleAttackTurn(attacker: Warrior, defender: Warrior) {
+    val defense = if (defender is Defendable) defender.defense else 0
+    val damageDealt = (attacker.attack - defense).coerceAtLeast(0)
+
+    defender.takeDamage(damageDealt)
+
+    if (attacker is Vampiric) {
+        val healingAmount = (damageDealt * attacker.vampirism) / 100
+        attacker.receiveHealing(healingAmount)
+    }
+}
+
 fun fight(warrior1: Warrior, warrior2: Warrior): Boolean {
     while (warrior1.isAlive && warrior2.isAlive) {
-        val defenseOfWarrior2 = if (warrior2 is Defendable) warrior2.defense else 0
-        val damageToWarrior2 = warrior1.attack - defenseOfWarrior2
-        warrior2.takeDamage(damageToWarrior2)
+        handleAttackTurn(attacker = warrior1, defender = warrior2)
 
         if (warrior2.isAlive) {
-            val defenseOfWarrior1 = if (warrior1 is Defendable) warrior1.defense else 0
-            val damageToWarrior1 = warrior2.attack - defenseOfWarrior1
-            warrior1.takeDamage(damageToWarrior1)
+            handleAttackTurn(attacker = warrior2, defender = warrior1)
         }
 
         if (warrior1.attack == 0 && warrior2.attack == 0) {
